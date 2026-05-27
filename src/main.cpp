@@ -16,7 +16,6 @@ class Vehicle {
 class Car : public Vehicle{
   public:
     struct Config {
-      struct glaze {static constexpr std::string_view name = "Car";};
       using Impl = Car;
       double horsepower = 500;
       int seats = 4;
@@ -35,7 +34,6 @@ class Car : public Vehicle{
 class Truck : public Vehicle {
   public: 
     struct Config {
-      struct glaze {static constexpr std::string_view name = "Truck";};
       using Impl = Truck;
       double horsepower = 1000;
       double bed_length_ft = 5;
@@ -51,7 +49,7 @@ class Truck : public Vehicle {
     Config _config;
 };
 
-// This is the magic factory 
+// This factory automatically hydrates classes based on their internal config struct
 template <typename Base, typename ConfigVariant>
 std::unique_ptr<Base> make(const ConfigVariant& config) {
   return std::visit(
@@ -68,7 +66,7 @@ std::unique_ptr<Base> make(const ConfigVariant& config) {
 }
 
 
-
+// We have to use a variant to key glaze into the multiple structs we could be passing
 using VehicleTypeConfig = std::variant<Car::Config, Truck::Config>;
 
 struct VehicleConfig {
