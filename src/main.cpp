@@ -65,12 +65,20 @@ std::unique_ptr<Base> make(const ConfigVariant& config) {
     );
 }
 
-
 // We have to use a variant to key glaze into the multiple structs we could be passing
-using VehicleTypeConfig = std::variant<Car::Config, Truck::Config>;
+using VehicleConfigVariant = std::variant<Car::Config, Truck::Config>;
+
+// Discriminator
+// https://github.com/stephenberry/glaze/blob/main/docs/variant-handling.md
+template <>
+struct glz::meta<VehicleConfigVariant> {
+   static constexpr std::string_view tag = "type";
+   static constexpr auto ids = std::array{"Car", "Truck"};
+};
+
 
 struct VehicleConfig {
-  VehicleTypeConfig vehicle = Truck::Config{.bed_length_ft = 2}; // non-default config
+  VehicleConfigVariant vehicle = Truck::Config{.bed_length_ft = 2}; // non-default config
   std::string owner = "me";
 };
 
@@ -97,13 +105,14 @@ int main(int argc, char* argv[]) {
   auto ec_read = glz::read_json(my_config, content);
   if (ec_read) {
     std::cerr << "error reading file\n";
+    std::cerr << glz::format_error(ec_read, content) << "\n";
     return 1;
   }
 
   auto json = glz::write_json(my_config).value_or("error");
   std::cout << "JSON config (including defaults if not specified)\n" << json << "\n";
 
-  auto my_vehicle = make<Vehicle, VehicleTypeConfig>(my_config.vehicle); 
+  auto my_vehicle = make<Vehicle, VehicleConfigVariant>(my_config.vehicle); 
   std::cout << "Vehicle description: " << my_vehicle->description() << "\n";
   return 0;
 }
